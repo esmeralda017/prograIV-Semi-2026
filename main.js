@@ -1,89 +1,48 @@
-const { createApp } = Vue;
+// ══════════════════════════════════════════════
+//  main.js
+//  db_usss017124_OLimpiarivas — Parcial_I
+// ══════════════════════════════════════════════
 
-createApp({
-    data() {
-        return {
-            alumnos: [],
-            buscar: '',
-            accion: 'nuevo',
-            id: 0,
-            alumno: {
-                codigo: '',
-                nombre: '',
-                direccion: '',
-                municipio: '',
-                depto: '',
-                fechaNac: '',
-                sexo: 'Masculino',
-                email: '',
-                telefono: ''
-            }
-        }
-    },
-    methods: {
-        obtenerAlumnos() {
-            this.alumnos = [];
-            let n = localStorage.length;
-            for (let i = 0; i < n; i++) {
-                let key = localStorage.key(i);
-                if (!isNaN(key)) {
-                    let data = JSON.parse(localStorage.getItem(key));
-                    // Buscador por nombre o código
-                    if (data.nombre.toUpperCase().includes(this.buscar.toUpperCase()) || 
-                        data.codigo.toUpperCase().includes(this.buscar.toUpperCase())) {
-                        this.alumnos.push(data);
-                    }
-                }
-            }
-        },
-        guardarAlumno() {
-            // Verificar duplicados solo si es nuevo
-            if (this.accion === 'nuevo') {
-                let duplicado = this.alumnos.find(a => a.codigo === this.alumno.codigo);
-                if (duplicado) {
-                    alert("El código ya existe para: " + duplicado.nombre);
-                    return;
-                }
-            }
+// ── TOAST ──────────────────────────────────────
+let _tt;
+function toast(msg, err) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = err ? 'show err' : 'show';
+  clearTimeout(_tt);
+  _tt = setTimeout(function(){ el.className = ''; }, 3400);
+}
 
-            let datos = {
-                id: this.accion === 'modificar' ? this.id : new Date().getTime(),
-                ...this.alumno
-            };
+// ── NAVEGACIÓN ─────────────────────────────────
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('nav-' + page).classList.add('active');
+  document.getElementById('sidebar').classList.remove('open');
+  if (page === 'autores') buscarAutores();
+  if (page === 'libros')  buscarLibros();
+}
 
-            localStorage.setItem(datos.id, JSON.stringify(datos));
-            this.limpiarFormulario();
-            this.obtenerAlumnos();
-        },
-        modificarAlumno(item) {
-            this.accion = 'modificar';
-            this.id = item.id;
-            // Copiamos los datos al formulario
-            this.alumno = { ...item };
-        },
-        eliminarAlumno(id) {
-            if (confirm("¿Seguro que desea eliminar este registro?")) {
-                localStorage.removeItem(id);
-                this.obtenerAlumnos();
-            }
-        },
-        limpiarFormulario() {
-            this.accion = 'nuevo';
-            this.id = 0;
-            this.alumno = {
-                codigo: '',
-                nombre: '',
-                direccion: '',
-                municipio: '',
-                depto: '',
-                fechaNac: '',
-                sexo: 'Masculino',
-                email: '',
-                telefono: ''
-            };
-        }
-    },
-    mounted() {
-        this.obtenerAlumnos();
-    }
-}).mount("#app");
+// ── CERRAR MODAL AL HACER CLIC EN EL FONDO ─────
+document.addEventListener('click', function(e) {
+  ['overlayAutor','overlayLibro','overlayConfirm'].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (e.target === el) el.classList.remove('abierto');
+  });
+});
+
+// ── CERRAR CON ESC ─────────────────────────────
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    ['overlayAutor','overlayLibro','overlayConfirm'].forEach(function(id){
+      document.getElementById(id).classList.remove('abierto');
+    });
+  }
+});
+
+// ── INIT ───────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  buscarAutores();
+  buscarLibros();
+});
